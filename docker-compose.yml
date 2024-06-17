@@ -1,9 +1,5 @@
 services:
-  app:
+  open_transaction_notifier:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - DEV=false
-    volumes:
-      - .:/usr/src/app

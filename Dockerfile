@@ -1,14 +1,23 @@
-# Use the official Rust image from the Docker Hub
-FROM rust:1.79.0
+# Use the official Golang image as the base image
+FROM golang:1.22.3 AS builder
 
-# Create a new directory to run our app
-WORKDIR /usr/src/app
+# Set the working directory inside the container
+WORKDIR /app
 
-# Copy the current directory contents into the container at /usr/src/app
+# Copy the source code into the container
 COPY . .
 
-# Build the application
-RUN if [ "$DEV" = "true" ] ; then cargo build ; else cargo build --release ; fi
+# Download the dependencies
+RUN go mod download
 
-# Run the application
-CMD if [ "$DEV" = "true" ] ; then cargo run ; else cargo run --release ; fi
+# Build the Go application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+# Create a new lightweight image with only the binary
+FROM scratch
+
+# Copy the binary from the builder stage into the new image
+COPY --from=builder /app/app /app/app
+
+# Set the entry point for the container
+ENTRYPOINT ["/app/app"]

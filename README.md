@@ -13,7 +13,9 @@ git clone git@github.com:torbenconto/open-transaction-notifier.git && cd open-tr
 ```bash
   docker-compose up
 ```
- Or for developers
-```bash
-  docker-compose -f docker-compose.dev.yml up
-```
+
+Notifying options:
+- discord_webhook 
+
+Need to split documents harvested into transactions before notifying. Each doc can
+have multiple transactions.
