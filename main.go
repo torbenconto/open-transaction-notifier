@@ -1,16 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"encoding/xml"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html/charset"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -18,6 +17,7 @@ var processedTransactions = make(map[string]bool)
 var isFirstRun = true
 
 func main() {
+	fmt.Println(os.Environ())
 	ticker := time.NewTicker(10 * time.Second) // Adjust the interval as needed
 	defer ticker.Stop()
 
@@ -37,11 +37,9 @@ func checkForNewTransactions() {
 		return
 	}
 
-	var wg sync.WaitGroup
-
 	for _, entry := range feed.Entries {
 		link := entry.Link.Href
-		shortURL := shortenURL(link) + "/ownership.xml"
+		shortURL := shortenURL(link)
 
 		// Check if the transaction has already been processed
 		if _, exists := processedTransactions[shortURL]; exists && !isFirstRun {
@@ -56,41 +54,56 @@ func checkForNewTransactions() {
 			continue
 		}
 
-		wg.Add(1)
-		go func(entry Entry) {
-			defer wg.Done()
+		// Get index of transaction
+		req, err := http.NewRequest(http.MethodGet, shortURL, http.NoBody)
+		if err != nil {
+			log.Fatalf("error: %v\n", err)
+		}
+		req.Header.Set("User-Agent", UA)
 
-			fmt.Print("shortURL: ", shortURL, "\n")
+		resp, err := SecHttpClient.Do(req)
+		if err != nil {
+			log.Fatalf("error: %v\n", err)
+		}
+		defer resp.Body.Close()
 
-			req, err := http.NewRequest(http.MethodGet, shortURL, http.NoBody)
-			if err != nil {
-				log.Fatalf("error: %v\n", err)
+		// Create a goquery document from the HTTP response
+		document, err := goquery.NewDocumentFromReader(resp.Body)
+		if err != nil {
+			log.Fatal("Error loading HTTP response body. ", err)
+		}
+
+		// Find and request all links with hrefs ending with ".xml"
+		document.Find("tbody a").Each(func(index int, element *goquery.Selection) {
+			href, exists := element.Attr("href")
+			if exists && strings.HasSuffix(href, ".xml") {
+				// Send a request to the .xml URL
+				xmlReq, err := http.NewRequest(http.MethodGet, "https://sec.gov"+href, nil)
+				if err != nil {
+					log.Fatalf("error: %v\n", err)
+				}
+				xmlReq.Header.Set("User-Agent", UA)
+
+				xmlResp, err := SecHttpClient.Do(xmlReq)
+				if err != nil {
+					log.Fatalf("error: %v\n", err)
+				}
+				defer xmlResp.Body.Close()
+
+				// Parse the XML response into an OwnershipDocument
+				var doc OwnershipDocument
+				decoder := xml.NewDecoder(xmlResp.Body)
+				decoder.CharsetReader = charset.NewReaderLabel
+				err = decoder.Decode(&doc)
+				if err != nil {
+					log.Fatalf("error: %v\n", err)
+				}
+
+				// Call handleNewDocument with the parsed OwnershipDocument
+				handleNewDocument(doc)
 			}
-			req.Header.Set("User-Agent", UA)
-
-			res, err := (&SecHttpClient).Do(req)
-			defer res.Body.Close()
-
-			if err != nil {
-				log.Fatalf("error: %v\n", err)
-			}
-
-			reader := bufio.NewReader(res.Body)
-
-			var doc OwnershipDocument
-			decoder := xml.NewDecoder(reader)
-			decoder.CharsetReader = charset.NewReaderLabel
-			err = decoder.Decode(&doc)
-			if err != nil {
-				log.Fatalf("error: %v\n", err)
-			}
-
-			// Call the function for each new doc
-			handleNewDocument(doc)
-		}(entry)
+		})
 	}
-
-	wg.Wait()
 
 	isFirstRun = false
 }

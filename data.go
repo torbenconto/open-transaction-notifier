@@ -26,6 +26,7 @@ func GetTransactions() (Feed, error) {
 		"action": []string{"getcurrent"},
 		"type":   []string{"4"},
 		"count":  []string{"25"},
+		"owner":  []string{"only"},
 		"output": []string{"atom"},
 	}
 

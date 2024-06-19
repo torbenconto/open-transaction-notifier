@@ -13,6 +13,16 @@ func Notify(method, info string, tx Transaction) {
 }
 
 func NotifyDiscordWebhook(link string, tx Transaction) {
+	var txtype string
+	switch tx.Type {
+	case "A":
+		txtype = "Purchase"
+	case "D":
+		txtype = "Sale"
+	}
+	if tx.PricePerShare == 0.000000 {
+		txtype = "Option Exercise"
+	}
 	err := sendEmbedToWebhook(link, WebhookMessage{
 		Content: "Open Transaction Notifier - New Transaction",
 		Embeds: []Embed{
@@ -22,6 +32,10 @@ func NotifyDiscordWebhook(link string, tx Transaction) {
 					{
 						Name:  "Ticker",
 						Value: tx.Symbol,
+					},
+					{
+						Name:  "Type",
+						Value: txtype,
 					},
 					{
 						Name:  "Price Per Share",

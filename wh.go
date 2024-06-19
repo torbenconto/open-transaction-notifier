@@ -38,8 +38,7 @@ func sendEmbedToWebhook(webhookURL string, message WebhookMessage) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := (&SecHttpClient).Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send HTTP request: %w", err)
 	}
