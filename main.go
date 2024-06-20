@@ -31,9 +31,6 @@ func init() {
 	}
 }
 
-var processedTransactions = make(map[string]bool)
-var isFirstRun = true
-
 func main() {
 	duration, err := time.ParseDuration(config.OpenTransactionNotifier.TimeInterval)
 	if err != nil {
@@ -51,30 +48,30 @@ func main() {
 	}
 }
 
+var processedTransactions = make(map[string]bool)
+var isFirstRun = true
+
 func checkForNewTransactions() {
 	log.Println("Checking for new transactions...")
 	feed, err := GetTransactions()
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		log.Fatalf("error: %v\n", err)
 		return
 	}
+
+	newTransactions := make([]Transaction, 0) // Collect new transactions to notify
 
 	for _, entry := range feed.Entries {
 		link := entry.Link.Href
 		shortURL := shortenURL(link)
 
 		// Check if the transaction has already been processed
-		if _, exists := processedTransactions[shortURL]; exists && !isFirstRun {
+		if _, exists := processedTransactions[shortURL]; exists {
 			continue
 		}
 
 		// Mark the transaction as processed
 		processedTransactions[shortURL] = true
-
-		// If it's the first run, don't handle the transaction
-		if isFirstRun {
-			continue
-		}
 
 		// Get index of transaction
 		req, err := http.NewRequest(http.MethodGet, shortURL, http.NoBody)
@@ -95,8 +92,8 @@ func checkForNewTransactions() {
 			log.Fatal("Error loading HTTP response body. ", err)
 		}
 
-		// Find and request all links with hrefs ending with ".xml"
-		document.Find("tbody a").Each(func(index int, element *goquery.Selection) {
+		// Find and request the first link with href ending with ".xml"
+		document.Find("tbody a").EachWithBreak(func(index int, element *goquery.Selection) bool {
 			href, exists := element.Attr("href")
 			if exists && strings.HasSuffix(href, ".xml") {
 				// Send a request to the .xml URL
@@ -121,16 +118,26 @@ func checkForNewTransactions() {
 					log.Fatalf("error: %v\n", err)
 				}
 
-				// Call handleNewDocument with the parsed OwnershipDocument
-				handleNewDocument(doc)
+				// Collect new transactions
+				newTransactions = append(newTransactions, extractTransactions(doc)...)
+
+				// Break the loop after processing the first link
+				return false
 			}
+			return true
 		})
 	}
 
-	isFirstRun = false
+	if !isFirstRun {
+		notifyTransactions(newTransactions)
+	} else {
+		log.Println("Skipping notifications for the first run.")
+	}
+
+	isFirstRun = false // Update flag after first run
 }
 
-func handleNewDocument(doc OwnershipDocument) {
+func extractTransactions(doc OwnershipDocument) []Transaction {
 	var transactions []Transaction
 	// Handle non-derivative transactions
 	for _, transaction := range doc.NonDerivativeTable.NonDerivativeTransaction {
@@ -145,19 +152,60 @@ func handleNewDocument(doc OwnershipDocument) {
 		}
 
 		pricePerShare, err := strconv.ParseFloat(transaction.TransactionAmounts.TransactionPricePerShare.Value, 64)
+		if err != nil {
+			log.Fatalf("error parsing price per share: %v", err)
+		}
 
+		var isDirector, isOfficer, isTenPercentOwner, isOther bool
+
+		if doc.ReportingOwner.ReportingOwnerRelationship.IsDirector == "" {
+			isDirector = false
+		} else {
+			isDirector = true
+		}
+
+		if doc.ReportingOwner.ReportingOwnerRelationship.IsOfficer == "" {
+			isOfficer = false
+		} else {
+			isOfficer = true
+		}
+
+		if doc.ReportingOwner.ReportingOwnerRelationship.IsTenPercentOwner == "" {
+			isTenPercentOwner = false
+		} else {
+			isTenPercentOwner = true
+		}
+
+		if doc.ReportingOwner.ReportingOwnerRelationship.IsOther == "" {
+			isOther = false
+		} else {
+			isOther = true
+		}
+		//TODO Possible to move relationship logic up to here and determine relationship title here instead of passing down to notify
 		tx := Transaction{
-			Symbol:        doc.Issuer.IssuerTradingSymbol,
-			Owner:         doc.Issuer.IssuerName,
+			Symbol: doc.Issuer.IssuerTradingSymbol,
+			Issuer: doc.Issuer.IssuerName,
+			Owner:  doc.ReportingOwner.ReportingOwnerId.RptOwnerName,
+			Relationship: Relationship{
+				IsDirector:        isDirector,
+				IsOfficer:         isOfficer,
+				IsTenPercentOwner: isTenPercentOwner,
+				IsOther:           isOther,
+				OtherText:         doc.ReportingOwner.ReportingOwnerRelationship.OtherText,
+				OfficerTitle:      doc.ReportingOwner.ReportingOwnerRelationship.OfficerTitle,
+			},
 			Date:          date,
 			Shares:        shares,
 			PricePerShare: pricePerShare,
-			Type:          transaction.TransactionAmounts.TransactionAcquiredDisposedCode.Value,
+			Type:          transaction.TransactionCoding.TransactionCode,
 		}
 
 		transactions = append(transactions, tx)
 	}
+	return transactions
+}
 
+func notifyTransactions(transactions []Transaction) {
 	for _, transaction := range transactions {
 		method := config.OpenTransactionNotifier.NotificationMethod
 		info := config.OpenTransactionNotifier.NotificationInfo
@@ -165,17 +213,7 @@ func handleNewDocument(doc OwnershipDocument) {
 			log.Fatalf("missing notification method or info")
 		}
 		Notify(method, info, transaction)
-		// Sleep 1/4 second to avoid rate limiting
-		time.Sleep(250 * time.Millisecond)
 	}
-	// Handle derivative transactions (WIP)
-	/*
-		for _, transaction := range doc.DerivativeTable.DerivativeTransaction {
-			// Here, transaction is an individual derivative transaction
-			// You can access its fields like transaction.SecurityTitle.Value, transaction.TransactionDate.Value, etc.
-			fmt.Printf("Derivative Transaction: %+v\n", transaction)
-		}
-	*/
 }
 
 func shortenURL(url string) string {

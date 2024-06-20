@@ -23,6 +23,7 @@ type Config struct {
 				Shares        bool `mapstructure:"SHARES"`
 				Owner         bool `mapstructure:"OWNER"`
 				Date          bool `mapstructure:"DATE"`
+				Relationship  bool `mapstructure:"RELATIONSHIP"`
 			} `mapstructure:"fields"`
 		} `mapstructure:"embed"`
 	} `mapstructure:"discord"`

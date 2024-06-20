@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Notify(method, info string, tx Transaction) {
@@ -17,19 +18,19 @@ func Notify(method, info string, tx Transaction) {
 func NotifyDiscordWebhook(link string, tx Transaction) {
 	var txtype string
 	var color int
+	var relationship string
 
 	switch tx.Type {
-	case "A":
-		txtype = "Purchase"
+	case "P":
 		color = 0x00FF00 // Green
-	case "D":
-		txtype = "Sale"
+	case "S":
 		color = 0xFF0000 // Red
 	}
 	if tx.PricePerShare == 0.000000 {
-		txtype = "Option Exercise"
-		color = 0x0000FF // Blue
+		color = 0x0000FF
 	}
+
+	txtype = transactionCodes[tx.Type]
 
 	// Get color from config
 	configColor := config.Discord.Embed.Color
@@ -39,6 +40,17 @@ func NotifyDiscordWebhook(link string, tx Transaction) {
 		if err == nil {
 			color = int(hexColor)
 		}
+	}
+
+	switch {
+	case tx.Relationship.IsDirector:
+		relationship = "Director"
+	case tx.Relationship.IsOfficer:
+		relationship = tx.Relationship.OfficerTitle
+	case tx.Relationship.IsTenPercentOwner:
+		relationship = "10% Owner"
+	case tx.Relationship.IsOther:
+		relationship = tx.Relationship.OtherText
 	}
 
 	// Create embed fields based on config
@@ -58,6 +70,9 @@ func NotifyDiscordWebhook(link string, tx Transaction) {
 	if config.Discord.Embed.Fields.Owner {
 		fields = append(fields, EmbedField{Name: "Owner", Value: fmt.Sprintf("%s", tx.Owner)})
 	}
+	if config.Discord.Embed.Fields.Relationship {
+		fields = append(fields, EmbedField{Name: "Relationship", Value: relationship})
+	}
 	if config.Discord.Embed.Fields.Date {
 		fields = append(fields, EmbedField{Name: "Date", Value: fmt.Sprintf("%v", tx.Date)})
 	}
@@ -75,4 +90,6 @@ func NotifyDiscordWebhook(link string, tx Transaction) {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+	// Sleep 1/4 second to avoid rate limiting
+	time.Sleep(250 * time.Millisecond)
 }

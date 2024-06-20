@@ -38,6 +38,7 @@ type OwnershipDocument struct {
 			IsTenPercentOwner string `xml:"isTenPercentOwner"`
 			IsOther           string `xml:"isOther"`
 			OfficerTitle      string `xml:"officerTitle"`
+			OtherText         string `xml:"otherText"`
 		} `xml:"reportingOwnerRelationship"`
 	} `xml:"reportingOwner"`
 	Aff10b5One         string `xml:"aff10b5One"`

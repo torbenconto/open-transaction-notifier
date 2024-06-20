@@ -1,18 +1,19 @@
 [open_transaction_notifier]
 NOTIFICATION_METHOD = "discord_webhook"
-NOTIFICATION_INFO = "your_discord_webhook_url"
+NOTIFICATION_INFO = "https://discord.com/api/webhooks/1252015036864532662/70Rb9GSmnMA5AGuB0WBx1HTKf6sSXqUbm-7EuMH6NIW3yZx6Zk0eGdu4Ey1XhrMHTbnU"
 TIME_INTERVAL = "30s"
+ONLY_REPORT_SALES_AND_BUYS = true
+
 [discord]
 MESSAGE = "New Transaction Detected"
 
 [discord.noembed]
 MESSAGE = "New Transaction Detected - Ticker: {ticker}, Type: {type}, Price Per Share: {price_per_share}, Shares: {shares}, Owner: {owner}, Date: {date}"
-# No support yet
 
 [discord.embed]
-ENABLED = true # No support yet
+ENABLED = true
 TITLE = "New Transaction"
-PRICE_DECIMALS = 2 # No support yet
+PRICE_DECIMALS = 2
 COLOR = "default" # "default" or a hex color code (e.g. #FF5733) defualt is red for sale, green for buy, and blue for option excercise
 
 [discord.embed.fields] # Which fields to show in the embed
@@ -22,3 +23,4 @@ PRICE_PER_SHARE = true
 SHARES = true #Quantity of shares
 OWNER = true
 DATE = true
+RELATIONSHIP = true #Relationship to the company

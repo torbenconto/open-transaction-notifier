@@ -38,7 +38,7 @@ func GetTransactions() (Feed, error) {
 	}
 	req.Header.Set("User-Agent", UA)
 
-	res, err := (&SecHttpClient).Do(req)
+	res, err := SecHttpClient.Do(req)
 	if err != nil {
 		return Feed{}, err
 	}
