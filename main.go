@@ -7,17 +7,40 @@ import (
 	"golang.org/x/net/html/charset"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 )
+
+var config Config
+
+func init() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+	viper.AddConfigPath(".")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("Error while reading config file %s", err)
+	}
+	err = viper.Unmarshal(&config)
+	if err != nil {
+		panic(fmt.Errorf("unable to decode into struct: %w", err))
+	}
+}
 
 var processedTransactions = make(map[string]bool)
 var isFirstRun = true
 
 func main() {
-	ticker := time.NewTicker(10 * time.Second)
+	duration, err := time.ParseDuration(config.OpenTransactionNotifier.TimeInterval)
+	if err != nil {
+		log.Fatalf("Error while parsing time duration %s", err)
+	}
+
+	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 
 	for {
@@ -116,7 +139,7 @@ func handleNewDocument(doc OwnershipDocument) {
 			log.Fatalf("error parsing date: %v", err)
 		}
 
-		shares, err := strconv.Atoi(transaction.TransactionAmounts.TransactionShares.Value)
+		shares, err := strconv.ParseFloat(transaction.TransactionAmounts.TransactionShares.Value, 64)
 		if err != nil {
 			log.Fatalf("error parsing shares: %v", err)
 		}
@@ -136,12 +159,14 @@ func handleNewDocument(doc OwnershipDocument) {
 	}
 
 	for _, transaction := range transactions {
-		method := os.Getenv("NOTIFICATION_METHOD") // "discord_webhook" for now
-		info := os.Getenv("NOTIFICATION_INFO")     // Discord webhook URL or email address (soon)
+		method := config.OpenTransactionNotifier.NotificationMethod
+		info := config.OpenTransactionNotifier.NotificationInfo
 		if method == "" || info == "" {
 			log.Fatalf("missing notification method or info")
 		}
 		Notify(method, info, transaction)
+		// Sleep 1/4 second to avoid rate limiting
+		time.Sleep(250 * time.Millisecond)
 	}
 	// Handle derivative transactions (WIP)
 	/*
