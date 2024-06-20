@@ -4,7 +4,4 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./config.toml:/app/config.toml
-    environment:
-      - NOTIFICATION_METHOD=discord_webhook
-      - NOTIFICATION_INFO=your_discord_webhook_url
+      - ./config.toml:/config.toml

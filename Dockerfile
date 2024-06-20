@@ -2,7 +2,7 @@
 FROM golang:1.22.3 AS builder
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /
 
 # Copy the source code into the container
 COPY . .
@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 FROM scratch
 
 # Copy the binary from the builder stage into the new image
-COPY --from=builder /app/app /app/app
+COPY --from=builder /app /app
 
 # Set the entry point for the container
-ENTRYPOINT ["/app/app"]
+ENTRYPOINT ["/app"]
