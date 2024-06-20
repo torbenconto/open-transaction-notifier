@@ -1,6 +1,6 @@
 [open_transaction_notifier]
 NOTIFICATION_METHOD = "discord_webhook"
-NOTIFICATION_INFO = "https://discord.com/api/webhooks/1252015036864532662/70Rb9GSmnMA5AGuB0WBx1HTKf6sSXqUbm-7EuMH6NIW3yZx6Zk0eGdu4Ey1XhrMHTbnU"
+NOTIFICATION_INFO = "your_info_here"
 TIME_INTERVAL = "30s"
 ONLY_REPORT_SALES_AND_BUYS = true
 
