@@ -1,5 +1,0 @@
-services:
-  open_transaction_notifier:
-    build:
-      context: .
-      dockerfile: Dockerfile

@@ -1,21 +1,23 @@
 # Open Transaction Notifier
 SEC form 4 transaction notifier for insiders trading in the US stock market.
 
+Uses only data from the SEC EDGAR database.
+
 ## How to run
-1. Clone the repository or pull the docker image (wip)
+1. Pull the docker image
 
 ```bash
-git clone git@github.com:torbenconto/open-transaction-notifier.git && cd open-transaction-notifier
+    docker pull torbenconto/open-transaction-notifier:latest
 ```
 
-2. Run the docker image
+2. Configure and run the docker container
 
 ```bash
-  docker-compose up
+    docker run -d
+     -e NOTIFICATION_METHOD=your_notification_method
+        -e NOTIFICATION_INFO=your_notification_info (eg: webhook url)
+     open-transaction-notifier:latest
 ```
 
 Notifying options:
-- discord_webhook 
-
-Need to split documents harvested into transactions before notifying. Each doc can
-have multiple transactions.
+- discord_webhook

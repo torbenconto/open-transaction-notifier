@@ -18,7 +18,7 @@ var isFirstRun = true
 
 func main() {
 	fmt.Println(os.Environ())
-	ticker := time.NewTicker(10 * time.Second) // Adjust the interval as needed
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
