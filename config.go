@@ -2,9 +2,10 @@ package main
 
 type Config struct {
 	OpenTransactionNotifier struct {
-		NotificationMethod string `mapstructure:"NOTIFICATION_METHOD"`
-		NotificationInfo   string `mapstructure:"NOTIFICATION_INFO"`
-		TimeInterval       string `mapstructure:"TIME_INTERVAL"`
+		NotificationMethod     string `mapstructure:"NOTIFICATION_METHOD"`
+		NotificationInfo       string `mapstructure:"NOTIFICATION_INFO"`
+		TimeInterval           string `mapstructure:"TIME_INTERVAL"`
+		OnlyReportSalesAndBuys bool   `mapstructure:"ONLY_REPORT_SALES_AND_BUYS"`
 	} `mapstructure:"open_transaction_notifier"`
 	Discord struct {
 		Message string `mapstructure:"MESSAGE"`

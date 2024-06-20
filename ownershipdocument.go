@@ -1,6 +1,11 @@
 package main
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"log"
+	"strconv"
+	"time"
+)
 
 // OwnershipDocument was generated 2024-06-16 16:32:35 by https://xml-to-go.github.io/ in Ukraine.
 type OwnershipDocument struct {
@@ -182,4 +187,72 @@ type OwnershipDocument struct {
 		SignatureName string `xml:"signatureName"`
 		SignatureDate string `xml:"signatureDate"`
 	} `xml:"ownerSignature"`
+}
+
+func (o *OwnershipDocument) ExtractTransactions() []Transaction {
+	var transactions []Transaction
+	// Handle non-derivative transactions
+	for _, transaction := range o.NonDerivativeTable.NonDerivativeTransaction {
+		date, err := time.Parse("2006-01-02", transaction.TransactionDate.Value)
+		if err != nil {
+			log.Fatalf("error parsing date: %v", err)
+		}
+		shares, err := strconv.ParseFloat(transaction.TransactionAmounts.TransactionShares.Value, 64)
+		if err != nil {
+			log.Fatalf("error parsing shares: %v", err)
+		}
+
+		pricePerShare, err := strconv.ParseFloat(transaction.TransactionAmounts.TransactionPricePerShare.Value, 64)
+		if err != nil {
+			log.Fatalf("error parsing price per share: %v", err)
+		}
+
+		var isDirector, isOfficer, isTenPercentOwner, isOther bool
+
+		if o.ReportingOwner.ReportingOwnerRelationship.IsDirector == "" {
+			isDirector = false
+		} else {
+			isDirector = true
+		}
+
+		if o.ReportingOwner.ReportingOwnerRelationship.IsOfficer == "" {
+			isOfficer = false
+		} else {
+			isOfficer = true
+		}
+
+		if o.ReportingOwner.ReportingOwnerRelationship.IsTenPercentOwner == "" {
+			isTenPercentOwner = false
+		} else {
+			isTenPercentOwner = true
+		}
+
+		if o.ReportingOwner.ReportingOwnerRelationship.IsOther == "" {
+			isOther = false
+		} else {
+			isOther = true
+		}
+
+		//TODO Possible to move relationship logic up to here and determine relationship title here instead of passing down to notify
+		tx := Transaction{
+			Symbol: o.Issuer.IssuerTradingSymbol,
+			Issuer: o.Issuer.IssuerName,
+			Owner:  o.ReportingOwner.ReportingOwnerId.RptOwnerName,
+			Relationship: Relationship{
+				IsDirector:        isDirector,
+				IsOfficer:         isOfficer,
+				IsTenPercentOwner: isTenPercentOwner,
+				IsOther:           isOther,
+				OtherText:         o.ReportingOwner.ReportingOwnerRelationship.OtherText,
+				OfficerTitle:      o.ReportingOwner.ReportingOwnerRelationship.OfficerTitle,
+			},
+			Date:          date,
+			Shares:        shares,
+			PricePerShare: pricePerShare,
+			Type:          transaction.TransactionCoding.TransactionCode,
+		}
+
+		transactions = append(transactions, tx)
+	}
+	return transactions
 }

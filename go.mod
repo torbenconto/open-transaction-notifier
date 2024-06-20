@@ -1,4 +1,4 @@
-module github.com/torbenconto/open-transaction/notifier
+module github.com/torbenconto/open-transaction-notifier
 
 go 1.22.3
 
