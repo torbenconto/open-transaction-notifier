@@ -6,7 +6,7 @@ Uses only data from the SEC EDGAR database.
 ## How to run
 1. Clone the repository
 ```bash
-    git clone git@github.com:torbenconto/open-transaction-notifier.git && cd open-transaction-notifier
+    git clone https://github.com/torbenconto/open-transaction-notifier.git && cd open-transaction-notifier
 ```
 2. Configure
 
