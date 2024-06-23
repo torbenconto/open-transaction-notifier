@@ -202,9 +202,14 @@ func (o *OwnershipDocument) ExtractTransactions() []Transaction {
 			log.Fatalf("error parsing shares: %v", err)
 		}
 
-		pricePerShare, err := strconv.ParseFloat(transaction.TransactionAmounts.TransactionPricePerShare.Value, 64)
-		if err != nil {
-			log.Fatalf("error parsing price per share: %v", err)
+		var pricePerShare float64
+		if transaction.TransactionAmounts.TransactionPricePerShare.Value == "" {
+			pricePerShare = 0.0
+		} else {
+			pricePerShare, err = strconv.ParseFloat(transaction.TransactionAmounts.TransactionPricePerShare.Value, 64)
+			if err != nil {
+				log.Fatalf("error parsing price per share: %v", err)
+			}
 		}
 
 		var isDirector, isOfficer, isTenPercentOwner, isOther bool

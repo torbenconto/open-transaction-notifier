@@ -1,6 +1,6 @@
 [open_transaction_notifier]
 NOTIFICATION_METHOD = "discord_webhook"
-NOTIFICATION_INFO = "your_info_here"
+NOTIFICATION_INFO = "your_notification_info"
 TIME_INTERVAL = "30s"
 ONLY_REPORT_SALES_AND_BUYS = true
 
@@ -13,7 +13,7 @@ MESSAGE = "New Transaction Detected - Ticker: {ticker}, Type: {type}, Price Per 
 [discord.embed]
 ENABLED = true
 TITLE = "New Transaction"
-PRICE_DECIMALS = 2
+DECIMALS = 2
 COLOR = "default" # "default" or a hex color code (e.g. #FF5733) defualt is red for sale, green for buy, and blue for option excercise
 
 [discord.embed.fields] # Which fields to show in the embed

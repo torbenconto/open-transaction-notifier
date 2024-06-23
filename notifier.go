@@ -68,6 +68,8 @@ func (n *Notifier) DiscordWebhook(transaction Transaction) {
 		relationship = transaction.Relationship.OtherText
 	}
 
+	decimalFormatString := fmt.Sprintf("%%.%df", conf.Discord.Embed.Decimals)
+
 	// Create embed fields based on config
 	var fields []EmbedField
 	if n.config.Discord.Embed.Fields.Ticker {
@@ -77,10 +79,10 @@ func (n *Notifier) DiscordWebhook(transaction Transaction) {
 		fields = append(fields, EmbedField{Name: "Type", Value: txtype})
 	}
 	if n.config.Discord.Embed.Fields.PricePerShare {
-		fields = append(fields, EmbedField{Name: "Price Per Share", Value: fmt.Sprintf("%f", transaction.PricePerShare)})
+		fields = append(fields, EmbedField{Name: "Price Per Share", Value: fmt.Sprintf(decimalFormatString, transaction.PricePerShare)})
 	}
 	if n.config.Discord.Embed.Fields.Shares {
-		fields = append(fields, EmbedField{Name: "Shares", Value: fmt.Sprintf("%v", transaction.Shares)})
+		fields = append(fields, EmbedField{Name: "Shares", Value: fmt.Sprintf(decimalFormatString, transaction.Shares)})
 	}
 	if n.config.Discord.Embed.Fields.Owner {
 		fields = append(fields, EmbedField{Name: "Owner", Value: fmt.Sprintf("%s", transaction.Owner)})

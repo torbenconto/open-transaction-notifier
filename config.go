@@ -13,11 +13,11 @@ type Config struct {
 			Message string `mapstructure:"MESSAGE"`
 		} `mapstructure:"noembed"`
 		Embed struct {
-			Enabled       bool   `mapstructure:"ENABLED"`
-			Title         string `mapstructure:"TITLE"`
-			PriceDecimals int    `mapstructure:"PRICE_DECIMALS"`
-			Color         string `mapstructure:"COLOR"`
-			Fields        struct {
+			Enabled  bool   `mapstructure:"ENABLED"`
+			Title    string `mapstructure:"TITLE"`
+			Decimals int    `mapstructure:"DECIMALS"`
+			Color    string `mapstructure:"COLOR"`
+			Fields   struct {
 				Ticker        bool `mapstructure:"TICKER"`
 				Type          bool `mapstructure:"TYPE"`
 				PricePerShare bool `mapstructure:"PRICE_PER_SHARE"`
